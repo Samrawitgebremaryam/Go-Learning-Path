@@ -21,7 +21,11 @@ func NewTaskController(taskmgr data.TaskManager) *TaskController {
 
 // GetTasks handles GET requests to retrieve all tasks
 func (controller *TaskController) GetTasks(c *gin.Context) {
-	tasks := controller.service.GetTasks()
+	tasks, err := controller.service.GetTasks()
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "couldn't fetch the data"})
+		return
+	}
 	c.IndentedJSON(http.StatusOK, tasks)
 }
 

@@ -2,69 +2,96 @@ package data
 
 import (
 	"Task_Manager/models"
+	"context"
 	"errors"
-	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TaskManager struct {
-	tasks []models.Task
+	client     *mongo.Client
+	collection *mongo.Collection
 }
 
 // Sample in-memory data for tasks
-func NewTaskManager() *TaskManager {
+func NewTaskManager(mclient *mongo.Client) *TaskManager {
+	collection := mclient.Database("taskManager").Collection("tasks")
 	return &TaskManager{
-		tasks: []models.Task{
-			{ID: 1, Title: "Task 1", Description: "First task", Due_date: time.Now(), Status: "Pending"},
-			{ID: 2, Title: "Task 2", Description: "Second task", Due_date: time.Now().AddDate(0, 0, 1), Status: "In Progress"},
-			{ID: 3, Title: "Task 3", Description: "Third task", Due_date: time.Now().AddDate(0, 0, 2), Status: "Completed"},
-		},
+		client:     mclient,
+		collection: collection,
 	}
 }
 
 // GetTasks returns a list of all tasks
-func (taskmgr *TaskManager) GetTasks() []models.Task {
-	return taskmgr.tasks
+func (taskmgr *TaskManager) GetTasks() ([]models.Task, error) {
+	var tasks []models.Task
+
+	curser, err := taskmgr.collection.Find(context.TODO(), bson.D{})
+
+	if err != nil {
+		return nil, err
+	}
+	if err = curser.All(context.TODO(), &tasks); err != nil {
+		return nil, err
+	}
+	return tasks, nil
+
 }
 
 // GetTaskById returns the details of a specific task by its ID
 func (taskmgr *TaskManager) GetTaskById(id int) (models.Task, error) {
-	for _, task := range taskmgr.tasks {
-		if id == task.ID {
-			return task, nil
+	var task models.Task
+
+	filter := bson.D{{Key: "id", Value: id}}
+
+	err := taskmgr.collection.FindOne(context.TODO(), filter).Decode(&task)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return task, errors.New("task not found .invalid ID please input another ID")
 		}
+		return task, err
 	}
-	return models.Task{}, errors.New("task not found")
+	return task, nil
 }
 
 // DeleteTask deletes a specific task by its ID
 func (taskmgr *TaskManager) DeleteTask(id int) error {
-	for i, task := range taskmgr.tasks {
-		if id == task.ID {
-			taskmgr.tasks = append(taskmgr.tasks[:i], taskmgr.tasks[i+1:]...)
-			return nil
-		}
+
+	filter := bson.D{{Key: "id", Value: id}}
+
+	result, err := taskmgr.collection.DeleteOne(context.TODO(), filter)
+
+	if err != nil {
+		return err
 	}
-	return errors.New("task not found")
+	if result.DeletedCount == 0 {
+		return errors.New("task not found invalid ID please input another ID")
+	}
+	return nil
 }
 
 // PutTask updates the details of a specific task by its ID
 func (taskmgr *TaskManager) PutTask(update models.Task, id int) error {
-	for i, task := range taskmgr.tasks {
-		if id == task.ID {
-			taskmgr.tasks[i] = update
-			return nil
-		}
+	filter := bson.D{{Key: "id", Value: id}}
+	updatebson := bson.D{{Key: "$set", Value: update}}
+	result, err := taskmgr.collection.UpdateOne(context.TODO(), filter, updatebson)
+
+	if err != nil {
+		return err
 	}
-	return errors.New("task not found")
+
+	if result.MatchedCount == 0 {
+		return errors.New("task not found invalid ID please input another ID")
+
+	}
+	return nil
 }
 
 // PostTask creates a new task
 func (taskmgr *TaskManager) PostTask(newTask models.Task) error {
-	for _, task := range taskmgr.tasks {
-		if newTask.ID == task.ID {
-			return errors.New("task ID already exists")
-		}
-	}
-	taskmgr.tasks = append(taskmgr.tasks, newTask)
-	return nil
+	_, err := taskmgr.collection.InsertOne(context.TODO(), newTask)
+
+	return err
 }
