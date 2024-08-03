@@ -9,14 +9,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type TaskController struct {
+	service data.TaskManager
+}
+
+func NewTaskController(taskmgr data.TaskManager) *TaskController {
+	return &TaskController{
+		service: taskmgr,
+	}
+}
+
 // GetTasks handles GET requests to retrieve all tasks
-func GetTasks(c *gin.Context) {
-	tasks := data.GetTasks()
+func (controller *TaskController) GetTasks(c *gin.Context) {
+	tasks := controller.service.GetTasks()
 	c.IndentedJSON(http.StatusOK, tasks)
 }
 
 // GetTaskById handles GET requests to retrieve a task by its ID
-func GetTaskById(c *gin.Context) {
+func (controller *TaskController) GetTaskById(c *gin.Context) {
 	id := c.Param("id")
 	idint, err := strconv.Atoi(id)
 	if err != nil {
@@ -24,7 +34,7 @@ func GetTaskById(c *gin.Context) {
 		return
 	}
 
-	task, err := data.GetTaskById(idint)
+	task, err := controller.service.GetTaskById(idint)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
@@ -33,7 +43,7 @@ func GetTaskById(c *gin.Context) {
 }
 
 // DeleteTask handles DELETE requests to delete a task by its ID
-func DeleteTask(c *gin.Context) {
+func (controller *TaskController) DeleteTask(c *gin.Context) {
 	id := c.Param("id")
 	idint, err := strconv.Atoi(id)
 	if err != nil {
@@ -41,7 +51,7 @@ func DeleteTask(c *gin.Context) {
 		return
 	}
 
-	err = data.DeleteTask(idint)
+	err = controller.service.DeleteTask(idint)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
@@ -50,7 +60,7 @@ func DeleteTask(c *gin.Context) {
 }
 
 // PutTask handles PUT requests to update a task by its ID
-func PutTask(c *gin.Context) {
+func (controller *TaskController) PutTask(c *gin.Context) {
 	id := c.Param("id")
 	var updatableTask models.Task
 	if err := c.BindJSON(&updatableTask); err != nil {
@@ -64,7 +74,7 @@ func PutTask(c *gin.Context) {
 		return
 	}
 
-	err = data.PutTask(updatableTask, idint)
+	err = controller.service.PutTask(updatableTask, idint)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
@@ -73,14 +83,14 @@ func PutTask(c *gin.Context) {
 }
 
 // PostTask handles POST requests to create a new task
-func PostTask(c *gin.Context) {
+func (controller *TaskController) PostTask(c *gin.Context) {
 	var newTask models.Task
 	if err := c.BindJSON(&newTask); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON"})
 		return
 	}
 
-	err := data.PostTask(newTask)
+	err := controller.service.PostTask(newTask)
 	if err != nil {
 		c.IndentedJSON(http.StatusConflict, gin.H{"message": err.Error()})
 		return
