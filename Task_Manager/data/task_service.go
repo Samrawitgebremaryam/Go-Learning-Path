@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -40,10 +41,10 @@ func (taskmgr *TaskManager) GetTasks() ([]models.Task, error) {
 }
 
 // GetTaskById returns the details of a specific task by its ID
-func (taskmgr *TaskManager) GetTaskById(id int) (models.Task, error) {
+func (taskmgr *TaskManager) GetTaskById(id primitive.ObjectID) (models.Task, error) {
 	var task models.Task
 
-	filter := bson.D{{Key: "id", Value: id}}
+	filter := bson.D{{Key: "_id", Value: id}}
 
 	err := taskmgr.collection.FindOne(context.TODO(), filter).Decode(&task)
 
@@ -57,9 +58,9 @@ func (taskmgr *TaskManager) GetTaskById(id int) (models.Task, error) {
 }
 
 // DeleteTask deletes a specific task by its ID
-func (taskmgr *TaskManager) DeleteTask(id int) error {
+func (taskmgr *TaskManager) DeleteTask(id primitive.ObjectID) error {
 
-	filter := bson.D{{Key: "id", Value: id}}
+	filter := bson.D{{Key: "_id", Value: id}}
 
 	result, err := taskmgr.collection.DeleteOne(context.TODO(), filter)
 
@@ -73,8 +74,8 @@ func (taskmgr *TaskManager) DeleteTask(id int) error {
 }
 
 // PutTask updates the details of a specific task by its ID
-func (taskmgr *TaskManager) PutTask(update models.Task, id int) error {
-	filter := bson.D{{Key: "id", Value: id}}
+func (taskmgr *TaskManager) PutTask(update models.Task, id primitive.ObjectID) error {
+	filter := bson.D{{Key: "_id", Value: id}}
 	updatebson := bson.D{{Key: "$set", Value: update}}
 	result, err := taskmgr.collection.UpdateOne(context.TODO(), filter, updatebson)
 
@@ -91,6 +92,7 @@ func (taskmgr *TaskManager) PutTask(update models.Task, id int) error {
 
 // PostTask creates a new task
 func (taskmgr *TaskManager) PostTask(newTask models.Task) error {
+	newTask.ID = primitive.NewObjectID()
 	_, err := taskmgr.collection.InsertOne(context.TODO(), newTask)
 
 	return err

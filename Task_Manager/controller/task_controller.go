@@ -4,9 +4,9 @@ import (
 	"Task_Manager/data"
 	"Task_Manager/models"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type TaskController struct {
@@ -32,7 +32,7 @@ func (controller *TaskController) GetTasks(c *gin.Context) {
 // GetTaskById handles GET requests to retrieve a task by its ID
 func (controller *TaskController) GetTaskById(c *gin.Context) {
 	id := c.Param("id")
-	idint, err := strconv.Atoi(id)
+	idint, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid task ID"})
 		return
@@ -49,7 +49,7 @@ func (controller *TaskController) GetTaskById(c *gin.Context) {
 // DeleteTask handles DELETE requests to delete a task by its ID
 func (controller *TaskController) DeleteTask(c *gin.Context) {
 	id := c.Param("id")
-	idint, err := strconv.Atoi(id)
+	idint, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid task ID"})
 		return
@@ -72,7 +72,7 @@ func (controller *TaskController) PutTask(c *gin.Context) {
 		return
 	}
 
-	idint, err := strconv.Atoi(id)
+	idint, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid task ID"})
 		return
