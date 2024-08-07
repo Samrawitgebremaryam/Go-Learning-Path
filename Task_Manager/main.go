@@ -42,20 +42,13 @@ func main() {
 	}
 
 	fmt.Println("Connected to MongoDB!")
-
-	// collection := client.Database("Task_Manager").Collection("tasks")
-	// err = client.Disconnect(context.TODO())
-
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Println("Connection to MongoDB closed.")
-
 	tasks := data.NewTaskManager(client)
 	taskmgr := controller.NewTaskController(*tasks)
+	users := data.NewUserManager(client)
+	usermgr := controller.NewUserController(*users)
 
 	r := gin.Default()
-	router.Endpoints(r, taskmgr)
+	router.Endpoints(r, taskmgr, usermgr)
 
 	if err := r.Run(); err != nil {
 		log.Fatalf("Failed to start the server: %v", err)

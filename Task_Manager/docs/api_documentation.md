@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Task Management REST API is designed to facilitate the management of tasks through a series of CRUD (Create, Read, Update, Delete) operations. Developed using the Go programming language and the Gin web framework, this API allows users to seamlessly interact with tasks, enabling them to create new tasks, retrieve existing ones, update task details, and delete tasks as needed.
+The Task Management REST API facilitates the management of tasks through CRUD operations. It uses JWT for secure user authentication and authorization.
 
 ## Base URL
 
@@ -12,58 +12,110 @@ http://localhost:8080
 
 ## Endpoints
 
-### 1. Create a Task
+### Authentication
+
+#### Register User
+
+**POST /register**
+
+**Description:** Registers a new user.
+
+**Request:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "usertype": "Admin" // or "User"
+}
+```
+
+**Response:**
+
+- **200 - OK**
+
+```json
+{ "message": "User registered successfully" }
+```
+
+#### Login User
+
+**POST /login**
+
+**Description:** Authenticates a user and returns a JWT token.
+
+**Request:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response:**
+
+- **200 - OK**
+
+```json
+{
+  "message": "User logged in successfully",
+  "token": "jwt_token_here"
+}
+```
+
+### Tasks
+
+All task endpoints require the `Authorization` header with the value `Bearer <token>`.
+
+#### Create a Task (Admin Only)
 
 **POST /tasks**
 
-**Description:** Creates a new task with the provided details such as title, description, due date, and status.
-
-**URL:** `/tasks`
+**Description:** Creates a new task.
 
 **Request Headers:**
 
 ```
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-**Request Body:**
+**Request:**
 
 ```json
 {
-  "id": 6,
   "title": "Prepare",
   "description": "Prepare the slides.",
-  "due_date": "July 10, 2025",
+  "due_date": "2025-07-10",
   "status": "In Progress"
 }
 ```
 
 **Response:**
 
-- **202 - Accepted**
+- **201 - Created**
 
 ```json
 {
   "message": "Task created successfully",
   "task": {
-    "id": 6,
-    "title": "Prepare",
-    "description": "Prepare the slides.",
-    "due_date": "July 10, 2025",
-    "status": "In Progress"
+    /* task details */
   }
 }
 ```
 
----
-
-### 2. Get All Tasks
+#### Get All Tasks
 
 **GET /tasks**
 
-**Description:** Retrieves a list of all tasks stored in the system.
+**Description:** Retrieves all tasks.
 
-**URL:** `/tasks`
+**Request Headers:**
+
+```
+Authorization: Bearer <token>
+```
 
 **Response:**
 
@@ -71,36 +123,21 @@ Content-Type: application/json
 
 ```json
 [
-  {
-    "id": 1,
-    "title": "Complete Project Proposal",
-    "description": "Draft and finalize the project proposal for client approval.",
-    "due_date": "July 12, 2024",
-    "status": "In Progress"
-  },
-  {
-    "id": 2,
-    "title": "Implement Authentication",
-    "description": "Develop and test user authentication features.",
-    "due_date": "July 13, 2024",
-    "status": "Not Started"
-  }
+  /* list of tasks */
 ]
 ```
 
----
-
-### 3. Get a Specific Task
+#### Get a Specific Task
 
 **GET /tasks/:id**
 
-**Description:** Retrieves the details of a specific task identified by its unique ID.
+**Description:** Retrieves a specific task by ID.
 
-**URL:** `/tasks/:id`
+**Request Headers:**
 
-**Path Variables:**
-
-- `id` (number): The unique identifier of the task.
+```
+Authorization: Bearer <token>
+```
 
 **Response:**
 
@@ -108,49 +145,36 @@ Content-Type: application/json
 
 ```json
 {
-  "id": 1,
-  "title": "Complete Project Proposal",
-  "description": "Draft and finalize the project proposal for client approval.",
-  "due_date": "July 12, 2024",
-  "status": "In Progress"
+  /* task details */
 }
 ```
 
 - **404 - Not Found**
 
 ```json
-{
-  "error": "Task not found"
-}
+{ "error": "Task not found" }
 ```
 
----
-
-### 4. Update a Task
+#### Update a Task
 
 **PUT /tasks/:id**
 
-**Description:** Updates the details of a specific task identified by its unique ID. The request body should include the fields to be updated.
-
-**URL:** `/tasks/:id`
-
-**Path Variables:**
-
-- `id` (number): The unique identifier of the task to be updated.
+**Description:** Updates a specific task by ID.
 
 **Request Headers:**
 
 ```
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-**Request Body:**
+**Request:**
 
 ```json
 {
   "title": "Updated Title",
   "description": "Updated Description",
-  "due_date": "July 15, 2025",
+  "due_date": "2025-07-15",
   "status": "Completed"
 }
 ```
@@ -163,11 +187,7 @@ Content-Type: application/json
 {
   "message": "Task updated successfully",
   "task": {
-    "id": 1,
-    "title": "Updated Title",
-    "description": "Updated Description",
-    "due_date": "July 15, 2025",
-    "status": "Completed"
+    /* updated task details */
   }
 }
 ```
@@ -175,44 +195,34 @@ Content-Type: application/json
 - **404 - Not Found**
 
 ```json
-{
-  "error": "Task not found"
-}
+{ "error": "Task not found" }
 ```
 
----
-
-### 5. Delete a Task
+#### Delete a Task (Admin Only)
 
 **DELETE /tasks/:id**
 
-**Description:** Deletes a specific task identified by its unique ID.
+**Description:** Deletes a specific task by ID.
 
-**URL:** `/tasks/:id`
+**Request Headers:**
 
-**Path Variables:**
-
-- `id` (number): The unique identifier of the task to be deleted.
+```
+Authorization: Bearer <token>
+```
 
 **Response:**
 
 - **200 - OK**
 
 ```json
-{
-  "message": "Task deleted successfully"
-}
+{ "message": "Task deleted successfully" }
 ```
 
 - **404 - Not Found**
 
 ```json
-{
-  "error": "Task not found"
-}
+{ "error": "Task not found" }
 ```
-
----
 
 ## Testing with Postman
 
@@ -222,20 +232,86 @@ Ensure the API is running locally on `http://localhost:8080`.
 
 ### Create Requests
 
-For each endpoint, create a new request in Postman:
+- **Register User:** POST to `http://localhost:8080/register` with JSON body.
+- **Login User:** POST to `http://localhost:8080/login` with JSON body to get the token.
+- **Authenticated Requests:** Add `Authorization: Bearer <token>` header.
 
-- **POST /tasks:** Use the POST method, set the URL to `http://localhost:8080/tasks`, and include the JSON body as specified.
-- **GET /tasks:** Use the GET method, set the URL to `http://localhost:8080/tasks`.
-- **GET /tasks/:id:** Use the GET method, set the URL to `http://localhost:8080/tasks/1` (replace `1` with the actual task ID).
-- **PUT /tasks/:id:** Use the PUT method, set the URL to `http://localhost:8080/tasks/1` (replace `1` with the actual task ID), and include the JSON body as specified.
-- **DELETE /tasks/:id:** Use the DELETE method, set the URL to `http://localhost:8080/tasks/1` (replace `1` with the actual task ID).
+### Example Requests
 
-### Send Requests
+1. **Register User:**
 
-Send each request and verify the response matches the expected format and status code.
+   - Method: POST
+   - URL: `http://localhost:8080/register`
+   - Body:
+     ```json
+     {
+       "email": "user@example.com",
+       "password": "password123",
+       "usertype": "Admin"
+     }
+     ```
 
-### Document Results
+2. **Login User:**
 
-For each request, document the request details, including headers, body, and the response received. Save these in Postman collections for future reference.
+   - Method: POST
+   - URL: `http://localhost:8080/login`
+   - Body:
+     ```json
+     {
+       "email": "user@example.com",
+       "password": "password123"
+     }
+     ```
 
----
+3. **Create Task (Admin Only):**
+
+   - Method: POST
+   - URL: `http://localhost:8080/tasks`
+   - Headers: `Authorization: Bearer <token>`
+   - Body:
+     ```json
+     {
+       "title": "Prepare",
+       "description": "Prepare the slides.",
+       "due_date": "2025-07-10",
+       "status": "In Progress"
+     }
+     ```
+
+4. **Get All Tasks:**
+
+   - Method: GET
+   - URL: `http://localhost:8080/tasks`
+   - Headers: `Authorization: Bearer <token>`
+
+5. **Get Specific Task:**
+
+   - Method: GET
+   - URL: `http://localhost:8080/tasks/1`
+   - Headers: `Authorization: Bearer <token>`
+
+6. **Update Task:**
+
+   - Method: PUT
+   - URL: `http://localhost:8080/tasks/1`
+   - Headers: `Authorization: Bearer <token>`
+   - Body:
+     ```json
+     {
+       "title": "Updated Title",
+       "description": "Updated Description",
+       "due_date": "2025-07-15",
+       "status": "Completed"
+     }
+     ```
+
+7. **Delete Task (Admin Only):**
+   - Method: DELETE
+   - URL: `http://localhost:8080/tasks/1`
+   - Headers: `Authorization: Bearer <token>`
+
+### Conclusion
+
+This concise documentation covers user registration, login, and task management with JWT-based authentication and authorization.
+
+for more info : https://documenter.getpostman.com/view/37193879/2sA3kdBHnP
