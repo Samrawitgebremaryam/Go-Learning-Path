@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UserController struct {
@@ -49,4 +50,20 @@ func (controller *UserController) LoginUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User logged in successfully", "token": token})
+}
+
+// DeleteTask handles DELETE requests to delete a user by its ID
+func (controller *UserController) DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+	idint, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid task ID"})
+		return
+	}
+	erro := controller.service.DeleteUser(idint)
+	if erro != nil {
+		c.IndentedJSON(http.StatusNotFound, gin.H{"message": erro.Error()})
+		return
+	}
+	c.IndentedJSON(http.StatusAccepted, gin.H{"message": "User deleted"})
 }

@@ -11,15 +11,17 @@ func Endpoints(r *gin.Engine, taskmgr *controller.TaskController, usermgr *contr
 	auth := r.Group("/")
 	auth.Use(middleware.AuthMiddleware())
 	{
-		auth.GET("/tasks", taskmgr.GetTasks)        // Define a route to get a list of all tasks
-		auth.PUT("/tasks/:id", taskmgr.PutTask)     // Define a route to update a specific task by its ID
-		auth.GET("/tasks/:id", taskmgr.GetTaskById) // Define a route to get the details of a specific task by its ID
+		auth.GET("/tasks", taskmgr.GetTasks)
+		auth.PUT("/tasks/:id", taskmgr.PutTask)
+		auth.GET("/tasks/:id", taskmgr.GetTaskById)
+		auth.POST("/tasks", taskmgr.PostTask)
+		auth.DELETE("/tasks/:id", taskmgr.DeleteTask)
 
 		admin := auth.Group("/")
 		admin.Use(middleware.AdminMiddleware())
+
 		{
-			admin.POST("/tasks", taskmgr.PostTask)         // Define a route to create a new task
-			admin.DELETE("/tasks/:id", taskmgr.DeleteTask) // Define a route to delete a specific task by its ID
+			admin.DELETE("/users/:id", usermgr.DeleteUser) // Define a route to delete a specific user by its ID
 		}
 
 	}

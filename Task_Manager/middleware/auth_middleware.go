@@ -48,6 +48,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		if userdata, err := token.Claims.(jwt.MapClaims); err && token.Valid {
 			c.Set("usertype", userdata["usertype"])
+			c.Set("userid", userdata["_id"])
 		} else {
 			c.JSON(401, gin.H{"error": "Invalid JWT"})
 			c.Abort()

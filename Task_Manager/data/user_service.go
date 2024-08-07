@@ -14,12 +14,15 @@ import (
 )
 
 type UserManager struct {
-	client *mongo.Client
+	client     *mongo.Client
+	collection *mongo.Collection
 }
 
-func NewUserManager(mClient *mongo.Client) *UserManager {
+func NewUserManager(mclient *mongo.Client) *UserManager {
+	collection := mclient.Database("taskManager").Collection("users")
 	return &UserManager{
-		client: mClient,
+		client:     mclient,
+		collection: collection,
 	}
 }
 
@@ -75,4 +78,19 @@ func (userMgr *UserManager) LoginUserDb(user models.User) (int, error, string) {
 	}
 
 	return http.StatusOK, nil, jwtToken
+}
+
+// DeleteUser deletes a specific task by its ID
+func (userMgr *UserManager) DeleteUser(id primitive.ObjectID) error {
+	filter := bson.D{{Key: "_id", Value: id}}
+
+	result, err := userMgr.collection.DeleteOne(context.TODO(), filter)
+
+	if err != nil {
+		return err
+	}
+	if result.DeletedCount == 0 {
+		return errors.New("user not found invalid ID please input another ID")
+	}
+	return nil
 }

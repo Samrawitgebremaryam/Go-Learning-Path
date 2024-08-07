@@ -25,10 +25,16 @@ func NewTaskManager(mclient *mongo.Client) *TaskManager {
 }
 
 // GetTasks returns a list of all tasks
-func (taskmgr *TaskManager) GetTasks() ([]models.Task, error) {
+func (taskmgr *TaskManager) GetTasks(isAdmin string, userId primitive.ObjectID) ([]models.Task, error) {
 	var tasks []models.Task
 
-	curser, err := taskmgr.collection.Find(context.TODO(), bson.D{})
+	filter := bson.D{}
+
+	if isAdmin != "Admin" {
+		filter = bson.D{{Key: "_userid", Value: userId}}
+	}
+
+	curser, err := taskmgr.collection.Find(context.TODO(), filter)
 
 	if err != nil {
 		return nil, err
@@ -41,10 +47,16 @@ func (taskmgr *TaskManager) GetTasks() ([]models.Task, error) {
 }
 
 // GetTaskById returns the details of a specific task by its ID
-func (taskmgr *TaskManager) GetTaskById(id primitive.ObjectID) (models.Task, error) {
+func (taskmgr *TaskManager) GetTaskById(id primitive.ObjectID, isAdmin string, userId primitive.ObjectID) (models.Task, error) {
 	var task models.Task
-
 	filter := bson.D{{Key: "_id", Value: id}}
+
+	if isAdmin != "Admin" {
+		filter = bson.D{
+			{Key: "_userid", Value: userId},
+			{Key: "_id", Value: id},
+		}
+	}
 
 	err := taskmgr.collection.FindOne(context.TODO(), filter).Decode(&task)
 
@@ -58,9 +70,15 @@ func (taskmgr *TaskManager) GetTaskById(id primitive.ObjectID) (models.Task, err
 }
 
 // DeleteTask deletes a specific task by its ID
-func (taskmgr *TaskManager) DeleteTask(id primitive.ObjectID) error {
-
+func (taskmgr *TaskManager) DeleteTask(id primitive.ObjectID, isAdmin string, userId primitive.ObjectID) error {
 	filter := bson.D{{Key: "_id", Value: id}}
+
+	if isAdmin != "Admin" {
+		filter = bson.D{
+			{Key: "_userid", Value: userId},
+			{Key: "_id", Value: id},
+		}
+	}
 
 	result, err := taskmgr.collection.DeleteOne(context.TODO(), filter)
 
@@ -74,8 +92,23 @@ func (taskmgr *TaskManager) DeleteTask(id primitive.ObjectID) error {
 }
 
 // PutTask updates the details of a specific task by its ID
-func (taskmgr *TaskManager) PutTask(update models.Task, id primitive.ObjectID) error {
+func (taskmgr *TaskManager) PutTask(updatedTask models.Task, id primitive.ObjectID, isAdmin string, userId primitive.ObjectID) error {
+
 	filter := bson.D{{Key: "_id", Value: id}}
+
+	if isAdmin != "Admin" {
+		filter = bson.D{
+			{Key: "_userid", Value: userId},
+			{Key: "_id", Value: id},
+		}
+	}
+	update := bson.M{
+		"title":       updatedTask.Title,
+		"description": updatedTask.Description,
+		"due_date":    updatedTask.Due_date,
+		"status":      updatedTask.Status,
+	}
+
 	updatebson := bson.D{{Key: "$set", Value: update}}
 	result, err := taskmgr.collection.UpdateOne(context.TODO(), filter, updatebson)
 
@@ -92,8 +125,7 @@ func (taskmgr *TaskManager) PutTask(update models.Task, id primitive.ObjectID) e
 
 // PostTask creates a new task
 func (taskmgr *TaskManager) PostTask(newTask models.Task) error {
-	newTask.ID = primitive.NewObjectID()
-	_, err := taskmgr.collection.InsertOne(context.TODO(), newTask)
 
-	return err
+	_, erro := taskmgr.collection.InsertOne(context.TODO(), newTask)
+	return erro
 }

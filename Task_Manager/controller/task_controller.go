@@ -21,7 +21,11 @@ func NewTaskController(taskmgr data.TaskManager) *TaskController {
 
 // GetTasks handles GET requests to retrieve all tasks
 func (controller *TaskController) GetTasks(c *gin.Context) {
-	tasks, err := controller.service.GetTasks()
+	isAdmin := c.GetString("usertype")
+	userID := c.GetString("userid")
+	userId, _ := primitive.ObjectIDFromHex(userID)
+
+	tasks, err := controller.service.GetTasks(isAdmin, userId)
 	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "couldn't fetch the data"})
 		return
@@ -31,6 +35,10 @@ func (controller *TaskController) GetTasks(c *gin.Context) {
 
 // GetTaskById handles GET requests to retrieve a task by its ID
 func (controller *TaskController) GetTaskById(c *gin.Context) {
+	isAdmin := c.GetString("usertype")
+	userID := c.GetString("userid")
+	userId, _ := primitive.ObjectIDFromHex(userID)
+
 	id := c.Param("id")
 	idint, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -38,7 +46,7 @@ func (controller *TaskController) GetTaskById(c *gin.Context) {
 		return
 	}
 
-	task, err := controller.service.GetTaskById(idint)
+	task, err := controller.service.GetTaskById(idint, isAdmin, userId)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
@@ -48,6 +56,10 @@ func (controller *TaskController) GetTaskById(c *gin.Context) {
 
 // DeleteTask handles DELETE requests to delete a task by its ID
 func (controller *TaskController) DeleteTask(c *gin.Context) {
+	isAdmin := c.GetString("usertype")
+	userID := c.GetString("userid")
+	userId, _ := primitive.ObjectIDFromHex(userID)
+
 	id := c.Param("id")
 	idint, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -55,7 +67,7 @@ func (controller *TaskController) DeleteTask(c *gin.Context) {
 		return
 	}
 
-	err = controller.service.DeleteTask(idint)
+	err = controller.service.DeleteTask(idint, isAdmin, userId)
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
@@ -65,6 +77,9 @@ func (controller *TaskController) DeleteTask(c *gin.Context) {
 
 // PutTask handles PUT requests to update a task by its ID
 func (controller *TaskController) PutTask(c *gin.Context) {
+	isAdmin := c.GetString("usertype")
+	userID := c.GetString("userid")
+	userId, _ := primitive.ObjectIDFromHex(userID)
 	id := c.Param("id")
 	var updatableTask models.Task
 	if err := c.BindJSON(&updatableTask); err != nil {
@@ -78,7 +93,8 @@ func (controller *TaskController) PutTask(c *gin.Context) {
 		return
 	}
 
-	err = controller.service.PutTask(updatableTask, idint)
+	err = controller.service.PutTask(updatableTask, idint, isAdmin, userId)
+
 	if err != nil {
 		c.IndentedJSON(http.StatusNotFound, gin.H{"message": err.Error()})
 		return
@@ -89,13 +105,22 @@ func (controller *TaskController) PutTask(c *gin.Context) {
 // PostTask handles POST requests to create a new task
 func (controller *TaskController) PostTask(c *gin.Context) {
 	var newTask models.Task
-	if err := c.BindJSON(&newTask); err != nil {
+	userId := c.GetString("userid")
+	newTask.ID = primitive.NewObjectID()
+	userID, err := primitive.ObjectIDFromHex(userId)
+	newTask.UserId = userID
+
+	if err != nil {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON"})
 		return
 	}
 
-	err := controller.service.PostTask(newTask)
-	if err != nil {
+	if err := c.BindJSON(&newTask); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "Invalid JSON"})
+		return
+	}
+	erro := controller.service.PostTask(newTask)
+	if erro != nil {
 		c.IndentedJSON(http.StatusConflict, gin.H{"message": err.Error()})
 		return
 	}
